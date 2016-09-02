@@ -1,0 +1,25 @@
+{
+  "name": "geo-photo-blog-cli",
+  "version": "1.0.0",
+  "description": "A photo uploader to your personal geo-photo-blog, complete with exiftool integration to embed geo latitude and longitude information into your photos",
+  "scripts": {
+    "prepublish": "npm run build",
+    "build": "babel src/ -d bin/"
+  },
+  "bin": {
+    "geotag": "bin/geotag"
+  },
+  "keywords": [],
+  "author": "Mike James <m@mikejam.es>",
+  "license": "ISC",
+  "dependencies": {
+    "assert": "^1.4.1",
+    "aws-sdk": "^2.5.5",
+    "chalk": "^1.1.3",
+    "commander": "^2.9.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.14.0",
+    "babel-preset-es2015": "^6.14.0"
+  }
+}
