@@ -7,7 +7,7 @@
     "build": "babel src/ -d bin/"
   },
   "bin": {
-    "geotag": "bin/geotag"
+    "geotag": "bin/geotag.js"
   },
   "keywords": [],
   "author": "Mike James <m@mikejam.es>",
