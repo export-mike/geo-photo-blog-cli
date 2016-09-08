@@ -1,19 +1,14 @@
 #! /usr/bin/env node
 import program from 'commander';
 import chalk from 'chalk';
-// import { execFile, exec } from 'child_process';
+import { execFile, exec } from 'child_process';
 import debug from 'debug';
 import inirc from 'inirc';
 import prompt from 'prompt';
 import pkg from '../package.json';
-import glob from './glob';
-import exec from './exec';
-import move from './move';
 
 prompt.start();
 const RC_FILE = '.geotagrc';
-const TAGGED_FOLDER = '.tagged';
-
 const rc = inirc(RC_FILE);
 debug.enable('geotag');
 const log = debug('geotag');
@@ -23,11 +18,14 @@ const cwd = process.cwd();
 program
   .description('geotag pictures, sync output to s3, publish to photoblog, shells out to exiftool')
   .version(pkg.version)
+  .option('-p, --path <path>', 'Path to directory of images')
+  .option('-g, --geotag <path>', 'Path to .gpx file')
   .option('--verbose', 'verbose mode for debugging')
   .option('--publish', 'upload to s3 and post images metadata to blog')
   .option('--s3', 'upload to s3')
   .option('--configure', 'configure cli')
   .option('-j, --rawtojpeg', 'convert raw files to JPEGs')
+  .option('--rawext <rawext>', 'raw file extension', /^(NEF|CRW|RAW)/, 'NEF')
   .parse(process.argv);
 
 if (program.verbose) debug.enable('geotag:*');
@@ -48,9 +46,6 @@ function tagImages() {
     );
   });
 }
-
-
-
 
 const syncToS3 = config => () => {
   if (program.s3 || program.publish) {
@@ -112,20 +107,6 @@ function getConfig() {
   );
 }
 
-const geoTag = ([mediaFiles, gpxFiles]) => {
-  const gpx = gpxFiles.map(g => `-geotag ${g}`).toString().replace(/,/g, ' ');
-  const media = mediaFiles.toString().replace(/,/g, ' ');
-  const cmd = `exiftool ${gpx} ${media}`;
-  return exec(cmd)
-  .then((stdout) => {
-    log(chalk.green(stdout));
-    return mediaFiles;
-  });
-};
-
-const moveToTagged = mediaFiles =>
-  Promise.all(mediaFiles.map(m => move(m, `${TAGGED_FOLDER}/${m}`)));
-
 if (program.configure) {
   log(chalk.green.bold(`Please configure your s3 Bucket in ${RC_FILE}`));
   prompt.get(['s3bucket'], (prompterr, result) => {
@@ -149,18 +130,18 @@ if (program.configure) {
   getConfig()
   .then((config) => {
     verbose('Config', config);
-    if (program.rawtojpeg) {
+    if (!!program.path && !!program.rawtojpeg) {
       log('running rawtojpeg');
       rawToJpeg();
+    } else if (program.path && program.geotag) {
+      rawToJpeg()
+      .then(tagImages)
+      .then(syncToS3(config))
+      .then(publishToBlog);
+    } else {
+      program.help();
     }
-
-    Promise.all([glob('**/*.JPG'), glob('**/*.MOV'), glob('**/*.gpx')])
-    .then(geoTag)
-    .then(moveToTagged);
   })
-      // .then(tagImages)
-      // .then(syncToS3(config))
-      // .then(publishToBlog);
   .catch((err) => {
     log(chalk.red.bold(err));
     process.exit(1);
