@@ -112,9 +112,10 @@ function getConfig() {
   );
 }
 
-const geoTag = ([mediaFiles, gpxFiles]) => {
-  const gpx = gpxFiles.map(g => `-geotag ${g}`).toString().replace(/,/g, ' ');
-  const media = mediaFiles.toString().replace(/,/g, ' ');
+const geoTag = ([pictures, video, gpxFiles]) => {
+  const gpx = gpxFiles.map(g => `-geotag "${g}"`).toString().replace(/,/g, ' ');
+  const mediaFiles = [...pictures, ...video];
+  const media = mediaFiles.map(m => `"${m}"`).toString().replace(/,/g, ' ');
   const cmd = `exiftool ${gpx} ${media}`;
   return exec(cmd)
   .then((stdout) => {
@@ -126,6 +127,7 @@ const geoTag = ([mediaFiles, gpxFiles]) => {
 const moveToTagged = mediaFiles =>
   Promise.all(mediaFiles.map(m => move(m, `${TAGGED_FOLDER}/${m}`)));
 
+// const sync = config => s3Sy
 if (program.configure) {
   log(chalk.green.bold(`Please configure your s3 Bucket in ${RC_FILE}`));
   prompt.get(['s3bucket'], (prompterr, result) => {
@@ -149,14 +151,15 @@ if (program.configure) {
   getConfig()
   .then((config) => {
     verbose('Config', config);
-    if (program.rawtojpeg) {
-      log('running rawtojpeg');
-      rawToJpeg();
-    }
+    // if (program.rawtojpeg) {
+    //   log('running rawtojpeg');
+    //   rawToJpeg();
+    // }
 
-    Promise.all([glob('**/*.JPG'), glob('**/*.MOV'), glob('**/*.gpx')])
+    return Promise.all([glob('**/*.JPG'), glob('**/*.MOV'), glob('**/*.gpx')])
     .then(geoTag)
     .then(moveToTagged);
+    // .then(sync);
   })
       // .then(tagImages)
       // .then(syncToS3(config))
