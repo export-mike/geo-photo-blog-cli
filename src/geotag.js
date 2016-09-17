@@ -16,10 +16,10 @@ import getHome from './getHome';
 import compress from './compress';
 import leftOuterJoin from './leftOuterJoin';
 import { cacheSet, cacheGet, cacheDel } from './cache';
-import { getIGotUGpxFile } from './getIGotUGpxFile';
+import getIGotUGpxFile from './getIGotUGpxFile';
 
 import { RC_FILE, TAGGED_KEY } from './defaults';
-
+/* eslint-disable max-len */
 prompt.start();
 
 const rc = inirc(RC_FILE);
@@ -36,6 +36,8 @@ program
   .option('--cache', 'cache options')
   .option('--clear <key>', 'to be used in conjunction with cache', String)
   .option('--ignoreVideo', 'flag to ignore MOV files for faster uploading on poor wifi', String)
+  .option('--skipgpxImport', 'flag to skip gpx import from igotugpx', String)
+  .option('--gpxImport <path>', 'optional path for output. Only import data from igotugpx then exit', String)
   .parse(process.argv);
 
 if (program.verbose) debug.enable('geotag:*');
@@ -114,6 +116,17 @@ if (program.configure) {
     log(chalk.red.bold(e));
     log(chalk.red.bold(e.stack));
   });
+} else if (program.gpxImport) {
+  getConfig()
+  .then((config) =>
+    getIGotUGpxFile({ config, log, verbose, program })
+    .then(() => log(chalk.green.bold('GPX data imported. exiting...')))
+  )
+  .catch((err) => {
+    log(chalk.red.bold(err));
+    log(chalk.red.bold(err.stack));
+    process.exit(1);
+  });
 } else {
   getConfig()
   .then((config) => {
@@ -126,8 +139,8 @@ if (program.configure) {
     // return Promise.all([glob('**/*.JPG'), glob('**/*.MOV'), glob('**/*.gpx')])
     // .then(filterProcessedFiles)
     let promise = Promise.resolve();
-    if (config.gpstracker === 'igotu') {
-      promise = getIGotUGpxFile({ config, log, verbose, program })
+    if (config.gpstracker === 'igotu' && program.skipgpximport) {
+      promise = getIGotUGpxFile({ config, log, verbose, program });
     }
     promise
     .then(() => geoTag({ config, log, verbose, program }))
