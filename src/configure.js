@@ -1,8 +1,9 @@
 import prompt from 'prompt';
 import chalk from 'chalk';
 import { RC_FILE } from './defaults';
+import getConfig from './getConfig';
 
-export default (loggers, rc) =>
+const setConfig = (loggers, rc) => config =>
   new Promise((resolve, reject) => {
     prompt.get(['s3bucket', 's3key', 's3secret'], (prompterr, result) => {
       if (prompterr) {
@@ -10,8 +11,8 @@ export default (loggers, rc) =>
         loggers.log(chalk.red.bold('An error occured when reading your input'));
         resolve();
       }
-
       return rc.put({
+        ...config,
         s3bucket: result.s3bucket,
         s3key: result.s3key,
         s3secret: result.s3secret,
@@ -27,3 +28,8 @@ export default (loggers, rc) =>
       });
     });
   });
+
+export default (loggers, rc) =>
+  getConfig()
+  .then(setConfig(loggers, rc))
+  .catch(setConfig(loggers, rc));

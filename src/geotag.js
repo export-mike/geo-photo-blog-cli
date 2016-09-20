@@ -12,13 +12,14 @@ import notify from 'osx-notifier';
 import pkg from '../package.json';
 import { globWithIgnore as glob } from './glob';
 import exec from './exec';
-import s3config from './s3config';
+import configure from './configure';
 import sync from './sync';
 import getHome from './getHome';
 import compress from './compress';
 import leftOuterJoin from './leftOuterJoin';
 import { cacheSet, cacheGet, cacheDel } from './cache';
 import getIGotUGpxFile from './getIGotUGpxFile';
+import getConfig from './getConfig';
 import { RC_FILE, TAGGED_KEY } from './defaults';
 
 
@@ -44,20 +45,6 @@ program
   .parse(process.argv);
 
 if (program.verbose) debug.enable('geotag:*');
-
-function getConfig() {
-  return new Promise((resolve, reject) =>
-    rc.get((err, data) => {
-      if (err) return reject(err);
-      if (!data.s3bucket) {
-        log(chalk.red.bold('please configure first with --configure'));
-        reject(err);
-        process.exit(1);
-      }
-      return resolve(data);
-    })
-  );
-}
 
 const geoTag = () =>
   Promise.all([
@@ -91,19 +78,31 @@ const geoTag = () =>
   });
 
 const rcFileCheck = () =>
-  fs.accessSync(
-    path.resolve(getHome(), RC_FILE),
-    fs.R_OK | fs.W_OK,
-    err => {
-      if (err) {
-        log(chalk.red.bold('Please configure before first use with --configure'));
-        process.exit(1);
-      }
-    });
+  fs.access(path.resolve(getHome(), RC_FILE), fs.F_OK, err => {
+    if (err) {
+      log(chalk.red.bold('Please configure before first use with --configure'));
+      process.exit(1);
+    }
+  });
+  // fs.accessSync(
+  //   path.resolve(getHome(), RC_FILE),
+  //   fs.F_OK,
+  //   err => {
+  //     try {
+  //       if (err) {
+  //         log(chalk.red.bold('Please configure before first use with --configure'));
+  //         process.exit(1);
+  //       }
+  //     } catch (e) {
+  //       log(chalk.red(e));
+  //       process.exit(1);
+  //     }
+  //   });
 
-rcFileCheck();
+if (!program.configure) rcFileCheck();
+
 if (program.configure) {
-  s3config({
+  configure({
     log,
     verbose,
   }, rc)
@@ -121,10 +120,14 @@ if (program.configure) {
   });
 } else if (program.gpxImport) {
   getConfig()
-  .then((config) =>
-    getIGotUGpxFile({ config, log, verbose, program })
-    .then(() => log(chalk.green.bold('GPX data imported. exiting...')))
-  )
+  .then((config) => {
+    if (!config.device) {
+      log(chalk.red.bold('Please configure device option in ~/.geotagrc. Example: `device = usb:0df7:0900` '));
+      process.exit(1);
+    }
+    return getIGotUGpxFile({ config, log, verbose, program })
+    .then(() => log(chalk.green.bold('GPX data imported. exiting...')));
+  })
   .catch((err) => {
     log(chalk.red.bold(err));
     log(chalk.red.bold(err.stack));
@@ -132,6 +135,13 @@ if (program.configure) {
   });
 } else {
   getConfig()
+  .then((config) => {
+    if (!config.s3bucket) {
+      log(chalk.red.bold('Please configure first with --configure'));
+      process.exit(1);
+    }
+    return config;
+  })
   .then((config) => {
     verbose('Config', config);
     // if (program.rawtojpeg) {
