@@ -3,9 +3,9 @@
 
 goals
 
-import gpx from device
+import gpx from device /
 tag images /
-resize
+resize /
 upload /
 backup ORIGINAL to EXT HDD
 sound popup for completed sync

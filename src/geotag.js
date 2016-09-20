@@ -7,6 +7,8 @@ import prompt from 'prompt';
 import fs from 'fs';
 import path from 'path';
 import concat from 'unique-concat';
+import sound from 'play-sound';
+import notify from 'osx-notifier';
 import pkg from '../package.json';
 import { globWithIgnore as glob } from './glob';
 import exec from './exec';
@@ -17,8 +19,9 @@ import compress from './compress';
 import leftOuterJoin from './leftOuterJoin';
 import { cacheSet, cacheGet, cacheDel } from './cache';
 import getIGotUGpxFile from './getIGotUGpxFile';
-
 import { RC_FILE, TAGGED_KEY } from './defaults';
+
+
 /* eslint-disable max-len */
 prompt.start();
 
@@ -36,7 +39,7 @@ program
   .option('--cache', 'cache options')
   .option('--clear <key>', 'to be used in conjunction with cache', String)
   .option('--ignoreVideo', 'flag to ignore MOV files for faster uploading on poor wifi', String)
-  .option('--skipgpxImport', 'flag to skip gpx import from igotugpx', String)
+  .option('--skipGPXImport', 'flag to skip gpx import from igotugpx', String)
   .option('--gpxImport <path>', 'optional path for output. Only import data from igotugpx then exit', String)
   .parse(process.argv);
 
@@ -139,14 +142,24 @@ if (program.configure) {
     // return Promise.all([glob('**/*.JPG'), glob('**/*.MOV'), glob('**/*.gpx')])
     // .then(filterProcessedFiles)
     let promise = Promise.resolve();
-    if (config.gpstracker === 'igotu' && program.skipgpximport) {
+    if (config.gpstracker === 'igotu' && !program.skipGPXImport) {
       promise = getIGotUGpxFile({ config, log, verbose, program });
     }
     promise
     .then(() => geoTag({ config, log, verbose, program }))
     .then(compress({ config, log, verbose, program }))
     .then(sync({ config, log, verbose, program }))
-    .then(() => log(chalk.green.bold('All files have been processed')));
+    .then(() => {
+      log(chalk.green.bold('All files have been processed'));
+      sound({}).play('/System/Library/Sounds/Glass.aiff', (e) => { if (e) log(chalk.red.bold(e)); });
+      notify({
+        type: 'pass',
+        title: 'Geo Tag',
+        subtitle: 'Task completed',
+        message: 'All files have been processed',
+        group: 'geotag',
+      });
+    });
   })
   .catch((err) => {
     log(chalk.red.bold(err));

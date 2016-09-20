@@ -25,6 +25,7 @@ export default ({ config, log, verbose, program }) =>
     // });
     igotu2gpx.on('close', (code) => {
       if (code !== 0) reject(`Child process igotu2gpx exited with code ${code}`);
+      if (!data) return resolve();
       data = data.toString();
       const res = data.indexOf('<?xml version="1.0" encoding="UTF-8"?>');
       if (res !== -1) {
@@ -35,7 +36,8 @@ export default ({ config, log, verbose, program }) =>
           `./${new Date().toISOString()}.gpx`,
           gpxString.replace(/2000-/g, `${new Date().getUTCFullYear()}-`)
         );
-        resolve();
+        return resolve();
       }
+      return reject('Unable to parse gpx stream');
     });
   });
