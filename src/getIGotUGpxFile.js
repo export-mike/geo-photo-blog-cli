@@ -1,7 +1,5 @@
 import { spawn } from 'child_process';
-import gpxParse from 'gpx-parse';
 import chalk from 'chalk';
-import moment from 'moment';
 import fs from 'fs';
 
 export default ({ config, log, verbose, program }) =>
@@ -16,13 +14,12 @@ export default ({ config, log, verbose, program }) =>
       verbose(chunk.toString());
       data += chunk;
     });
-    // we get strange data on stderr...
-    // igotu2gpx.stderr.on('data', () => {
-    //   // if (err) {
-    //   //   log('sderr', err);
-    //   //   reject(err);
-    //   // }
-    // });
+
+    // we rely on exit code for resolve/reject
+    igotu2gpx.stderr.on('data', (chunk) => {
+      log(chunk.toString());
+    });
+
     igotu2gpx.on('close', (code) => {
       if (code !== 0) reject(`Child process igotu2gpx exited with code ${code}`);
       if (!data) return resolve();
@@ -38,6 +35,7 @@ export default ({ config, log, verbose, program }) =>
         );
         return resolve();
       }
+      // we rely on the exit code to determine resolve or reject
       return reject('Unable to parse gpx stream');
     });
   });

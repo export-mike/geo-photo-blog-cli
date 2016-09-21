@@ -26,8 +26,8 @@ otherwise I'd suggest using: https://github.com/mendhak/gpslogger/ install on pl
 ## WORKFLOW
 copy over images to folders in ~/mytravels
 copy over images to ext HDD for backup (also preserves RAW originals)
-run `geotag`
+I use rsync ```rsync -avz ~/mytravels /Volumes/TravellerDrive/mytravels/```
+then I run `geotag`
 
 ## Cleaning up local machine from files to reduce disk space used by blog
-rm -rf .cache
 rm <IMAGE_FOLDERS>

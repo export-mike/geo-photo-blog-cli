@@ -42,6 +42,7 @@ program
   .option('--ignoreVideo', 'flag to ignore MOV files for faster uploading on poor wifi', String)
   .option('--skipGPXImport', 'flag to skip gpx import from igotugpx', String)
   .option('--gpxImport <path>', 'optional path for output. Only import data from igotugpx then exit', String)
+  .option('--rawMode', 'optional flag to stop compression', String)
   .parse(process.argv);
 
 if (program.verbose) debug.enable('geotag:*');
@@ -66,6 +67,10 @@ const geoTag = () =>
     const gpx = gpxFiles.map(g => `-geotag "${g}"`).toString().replace(/,/g, ' ');
     const media = filtered.map(m => `"${m}"`).toString().replace(/,/g, ' ');
     // -overwrite_original
+    if (!gpx.length) {
+      log(chalk.red.bold('No GPX files found, skiping exiftool'));
+      return Promise.resolve();
+    }
     const cmd = `exiftool -overwrite_original ${gpx} ${media}`;
 
     log(chalk.green('Geo-Tagging images using gpx files'));
@@ -141,7 +146,7 @@ if (program.configure) {
     if (config.gpstracker === 'igotu' && !program.skipGPXImport) {
       promise = getIGotUGpxFile({ config, log, verbose, program });
     }
-    promise
+    return promise
     .then(() => geoTag({ config, log, verbose, program }))
     .then(compress({ config, log, verbose, program }))
     .then(sync({ config, log, verbose, program }))
