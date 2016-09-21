@@ -21,7 +21,7 @@ After this step it'll geotag your images then sync with amazon S3.
 
 if you have the a igotu 120 or 600 GPS tracking device install this great software to install the ```igotu2gpx``` binary which geotag will shell out to.
 
-otherwise I'd suggest using: https://github.com/mendhak/gpslogger/ install on play store. Its great but I wanted a dedicated device which I can keep in a bag all day every day with me.
+otherwise I'd suggest using: https://github.com/mendhak/gpslogger/ install on play store and copy over the gpx file into an album folder or root of ~/mytravels. Its great but I wanted a dedicated device which I can keep in a bag all day every day with me.
 
 ## WORKFLOW
 copy over images to folders in ~/mytravels
