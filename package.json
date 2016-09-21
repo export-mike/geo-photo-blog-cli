@@ -1,6 +1,6 @@
 {
   "name": "geo-photo-blog-cli",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "A photo uploader to your personal geo-photo-blog, complete with exiftool integration to embed geo latitude and longitude information into your photos",
   "scripts": {
     "prepublish": "npm run build",
