@@ -84,20 +84,6 @@ const rcFileCheck = () =>
       process.exit(1);
     }
   });
-  // fs.accessSync(
-  //   path.resolve(getHome(), RC_FILE),
-  //   fs.F_OK,
-  //   err => {
-  //     try {
-  //       if (err) {
-  //         log(chalk.red.bold('Please configure before first use with --configure'));
-  //         process.exit(1);
-  //       }
-  //     } catch (e) {
-  //       log(chalk.red(e));
-  //       process.exit(1);
-  //     }
-  //   });
 
 if (!program.configure) rcFileCheck();
 
