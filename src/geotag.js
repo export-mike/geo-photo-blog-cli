@@ -21,7 +21,7 @@ import { cacheSet, cacheGet, cacheDel } from './cache';
 import getIGotUGpxFile from './getIGotUGpxFile';
 import getConfig from './getConfig';
 import { RC_FILE, TAGGED_KEY } from './defaults';
-
+import submitGeoTagsToApi from './submitGeoTagsToApi';
 
 /* eslint-disable max-len */
 prompt.start();
@@ -36,13 +36,13 @@ program
   .version(pkg.version)
   .option('--verbose', 'verbose mode for debugging')
   .option('--configure', 'configure cli')
-  .option('--nosync', 'process files but don\'t sync with s3')
+  .option('--compress', 'optional compression at level 65')
+  .option('--sync', 'optional sync with s3')
   .option('--cache', 'cache options')
   .option('--clear <key>', 'to be used in conjunction with cache', String)
   .option('--ignoreVideo', 'flag to ignore MOV files for faster uploading on poor wifi', String)
   .option('--skipGPXImport', 'flag to skip gpx import from igotugpx', String)
   .option('--gpxImport <path>', 'optional path for output. Only import data from igotugpx then exit', String)
-  .option('--rawMode', 'optional flag to stop compression', String)
   .parse(process.argv);
 
 if (program.verbose) debug.enable('geotag:*');
@@ -134,6 +134,8 @@ if (program.configure) {
     return config;
   })
   .then((config) => {
+    log('here');
+
     verbose('Config', config);
     // if (program.rawtojpeg) {
     //   log('running rawtojpeg');
@@ -144,12 +146,15 @@ if (program.configure) {
     // .then(filterProcessedFiles)
     let promise = Promise.resolve();
     if (config.gpstracker === 'igotu' && !program.skipGPXImport) {
+      log('here');
+
       promise = getIGotUGpxFile({ config, log, verbose, program });
     }
     return promise
     .then(() => geoTag({ config, log, verbose, program }))
     .then(compress({ config, log, verbose, program }))
     .then(sync({ config, log, verbose, program }))
+    .then(submitGeoTagsToApi({ config, log, verbose, program }))
     .then(() => {
       log(chalk.green.bold('All files have been processed'));
       sound({}).play('/System/Library/Sounds/Glass.aiff', (e) => { if (e) log(chalk.red.bold(e)); });

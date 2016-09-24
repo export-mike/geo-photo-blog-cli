@@ -41,15 +41,16 @@ const compress = ({ queue, config, filtered, compressed, log, verbose }) => {
   return promise.then(() => ({ compressed, filtered }));
 };
 
-export default ({ config, log, verbose, program }) => () =>
-  Promise.all([
+export default ({ config, log, verbose, program }) => () => {
+  if (!program.compress) return Promise.resolve();
+  return Promise.all([
     glob('**/*.JPG'),
     cacheGet(COMPRESSED_KEY, { parse: true, noFail: true }),
   ])
   .then(([jpgs, compressed = []]) => {
     const filtered = leftOuterJoin(jpgs, compressed);
     // verbose('compressed images', compressed);§
-    if (program.rawMode || !filtered.length) {
+    if (!filtered.length) {
       log(chalk.red.bold('No images to resize'));
       return Promise.resolve();
     }
@@ -64,3 +65,4 @@ export default ({ config, log, verbose, program }) => () =>
       return cacheSet(COMPRESSED_KEY, filtered);
     });
   });
+};

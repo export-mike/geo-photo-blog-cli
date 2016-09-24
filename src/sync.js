@@ -10,7 +10,7 @@ export default ({ config, log, program }) => () => {
   const cwd = process.cwd();
   const db = level(path.resolve(cwd, '.cache'));
   /* eslint-disable consistent-return */
-  if (program.nosync) return; // option to avoid s3 sync
+  if (!program.sync) return Promise.resolve(); // option to avoid s3 sync
 
   const files = readdirp({
     root: cwd,
