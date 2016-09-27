@@ -2,7 +2,6 @@
 import program from 'commander';
 import chalk from 'chalk';
 import debug from 'debug';
-import inirc from 'inirc';
 import prompt from 'prompt';
 import fs from 'fs';
 import path from 'path';
@@ -19,22 +18,20 @@ import compress from './compress';
 import leftOuterJoin from './leftOuterJoin';
 import { cacheSet, cacheGet, cacheDel } from './cache';
 import getIGotUGpxFile from './getIGotUGpxFile';
-import getConfig from './getConfig';
+import { getConfig } from './config';
 import { RC_FILE, TAGGED_KEY } from './defaults';
-import submitGeoTagsToApi from './submitGeoTagsToApi';
+import exifToolExtraction from './exifToolExtraction';
 
 /* eslint-disable max-len */
 prompt.start();
 
-const rc = inirc(RC_FILE);
-debug.enable('geotag');
-const log = debug('geotag');
+debug.enable('geotag:normal');
+const log = debug('geotag:normal');
 const verbose = debug('geotag:verbose');
 
 program
   .description('geotag pictures, sync output to s3, publish to photoblog, shells out to exiftool')
   .version(pkg.version)
-  .option('--verbose', 'verbose mode for debugging')
   .option('--configure', 'configure cli')
   .option('--compress', 'optional compression at level 65')
   .option('--sync', 'optional sync with s3')
@@ -44,8 +41,6 @@ program
   .option('--skipGPXImport', 'flag to skip gpx import from igotugpx', String)
   .option('--gpxImport <path>', 'optional path for output. Only import data from igotugpx then exit', String)
   .parse(process.argv);
-
-if (program.verbose) debug.enable('geotag:*');
 
 const geoTag = () =>
   Promise.all([
@@ -65,7 +60,7 @@ const geoTag = () =>
     }
     // strip whitespace for exiftool to work
     const gpx = gpxFiles.map(g => `-geotag "${g}"`).toString().replace(/,/g, ' ');
-    const media = filtered.map(m => `"${m}"`).toString().replace(/,/g, ' ');
+    const media = filtered.toString().replace(/,/g, ' ');
     // -overwrite_original
     if (!gpx.length) {
       log(chalk.red.bold('No GPX files found, skiping exiftool'));
@@ -96,7 +91,7 @@ if (program.configure) {
   configure({
     log,
     verbose,
-  }, rc)
+  })
   .then(() => process.exit(0))
   .catch((err) => {
     log(chalk.red.bold(err));
@@ -134,8 +129,6 @@ if (program.configure) {
     return config;
   })
   .then((config) => {
-    log('here');
-
     verbose('Config', config);
     // if (program.rawtojpeg) {
     //   log('running rawtojpeg');
@@ -146,15 +139,13 @@ if (program.configure) {
     // .then(filterProcessedFiles)
     let promise = Promise.resolve();
     if (config.gpstracker === 'igotu' && !program.skipGPXImport) {
-      log('here');
-
       promise = getIGotUGpxFile({ config, log, verbose, program });
     }
     return promise
     .then(() => geoTag({ config, log, verbose, program }))
     .then(compress({ config, log, verbose, program }))
     .then(sync({ config, log, verbose, program }))
-    .then(submitGeoTagsToApi({ config, log, verbose, program }))
+    .then(exifToolExtraction({ config, log, verbose, program }))
     .then(() => {
       log(chalk.green.bold('All files have been processed'));
       sound({}).play('/System/Library/Sounds/Glass.aiff', (e) => { if (e) log(chalk.red.bold(e)); });
