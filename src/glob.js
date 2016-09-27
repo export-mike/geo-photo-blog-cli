@@ -11,6 +11,6 @@ export default function glob(expr, opts) {
 
 export function globWithIgnore(expr) {
   return glob(expr, {
-    ignore: ['.synced', '.synced/**', '.tagged/**', '.tagged'],
+    ignore: ['.synced', '.synced/**', '.tagged/**', '.tagged', '_site'],
   });
 }

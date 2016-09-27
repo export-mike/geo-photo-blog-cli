@@ -2,12 +2,24 @@ import superagent from 'superagent';
 import chalk from 'chalk';
 import path from 'path';
 import fs from 'fs';
+import parseDMS from 'parse-dms';
 
 import exec from './exec';
 import glob from './glob';
 
+function formatToDMS(s) {
+  const su = s.replace(/\s/g, '')
+  .replace('deg', '°')
+  .replace('"', '\'');
+  return `${su.substr(0, su.length - 1)} ${su.substr(su.length - 1)}`;
+}
+
+function toDms(d) {
+  return formatToDMS(d);
+}
+
 /* eslint-disable consistent-return */
-export default ({ config, log, verbose }) => () =>
+export default ({ config, log }) => () =>
   Promise.all([
     glob('**/*.JPG'),
     glob('**/*.MOV'),
@@ -44,18 +56,24 @@ export default ({ config, log, verbose }) => () =>
           .replace(/,/g, ' ')} -json`
       )
       .then(j => JSON.parse(j))
-      .then(imgs => imgs.map(img => ({
-        ...img,
-        name: img.SourceFile
-          .toLowerCase()
-          .replace(/_/g, '')
-          .replace(/-/g, '')
-          .replace(/\.jpg/g, '')
-          .replace(/\.jpeg/g, '')
-          .replace(/\.png/g, '')
-          .replace(/\.gif/g, '')
-          .replace(/\.mov/g, ''),
-      })))
+      .then(imgs => imgs.map(img => {
+        const { lat, lon } = parseDMS(`${toDms(img.GPSLatitude)} ${toDms(img.GPSLongitude)}`);
+        log('DMS', `${toDms(img.GPSLatitude)} ${toDms(img.GPSLongitude)}`);
+        log('lat, lon', lat, lon);
+        return {
+          name: img.SourceFile
+            .toLowerCase()
+            .replace(/_/g, '')
+            .replace(/-/g, '')
+            .replace(/\.jpg/g, '')
+            .replace(/\.jpeg/g, '')
+            .replace(/\.png/g, '')
+            .replace(/\.gif/g, '')
+            .replace(/\.mov/g, ''),
+          lat,
+          lon,
+        };
+      }))
       .then(imgs =>
         new Promise((resolve, reject) => {
           try {

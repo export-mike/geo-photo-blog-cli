@@ -26,6 +26,7 @@
     "lodash": "^4.16.1",
     "moment": "^2.15.0",
     "osx-notifier": "^0.2.2",
+    "parse-dms": "0.0.3",
     "play-sound": "0.0.9",
     "promisify-node": "^0.4.0",
     "prompt": "^1.0.0",
