@@ -19,8 +19,10 @@ function toDms(d) {
 }
 
 /* eslint-disable consistent-return */
-export default ({ config, log }) => () =>
-  Promise.all([
+export default ({ config, log, program }) => () => {
+  if (!program.exposeExport) return Promise.resolve();
+
+  return Promise.all([
     glob('**/*.JPG'),
     glob('**/*.MOV'),
     glob('**/*.NEF'),
@@ -93,3 +95,4 @@ export default ({ config, log }) => () =>
     }
     return Promise.resolve();
   });
+};

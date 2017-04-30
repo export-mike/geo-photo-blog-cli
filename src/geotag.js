@@ -40,6 +40,7 @@ program
   .option('--ignoreVideo', 'flag to ignore MOV files for faster uploading on poor wifi', String)
   .option('--skipGPXImport', 'flag to skip gpx import from igotugpx', String)
   .option('--gpxImport <path>', 'optional path for output. Only import data from igotugpx then exit', String)
+  .option('--exposeExport', 'optional flag to produce a exifinfo.json file', String)
   .parse(process.argv);
 
 const geoTag = () =>
